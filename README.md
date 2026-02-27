@@ -17,16 +17,21 @@ Claude Code Skills repository for the Seat team, providing shared skills for cod
 
 ### Installation
 
-#### Quick Install
+#### Quick Install (推荐)
 
 ```bash
-npx skills add https://gogs.maizuo.com/seat/skills --skill git-review
+# 一键安装 git-review skill
+curl -sSL https://gogs.maizuo.com/seat/skills/raw/main/install.sh | bash
+
+# 安装指定 skill
+curl -sSL https://gogs.maizuo.com/seat/skills/raw/main/install.sh | bash -s git-review
 ```
 
-#### Register as Plugin Marketplace
+#### Manual Install
 
 ```bash
-/plugin marketplace add https://gogs.maizuo.com/seat/skills
+git clone https://gogs.maizuo.com/seat/skills.git /tmp/seat-skills
+cp -r /tmp/seat-skills/skills/git-review ~/.claude/skills/
 ```
 
 ### Available Skills
@@ -67,16 +72,21 @@ Seat 团队的 Claude Code Skills 仓库，提供代码审查和开发相关的�
 
 ### 安装
 
-#### 快速安装
+#### 一键安装 (推荐)
 
 ```bash
-npx skills add https://gogs.maizuo.com/seat/skills --skill git-review
+# 安装 git-review skill
+curl -sSL https://gogs.maizuo.com/seat/skills/raw/main/install.sh | bash
+
+# 安装指定 skill
+curl -sSL https://gogs.maizuo.com/seat/skills/raw/main/install.sh | bash -s git-review
 ```
 
-#### 注册为插件市场
+#### 手动安装
 
 ```bash
-/plugin marketplace add https://gogs.maizuo.com/seat/skills
+git clone https://gogs.maizuo.com/seat/skills.git /tmp/seat-skills
+cp -r /tmp/seat-skills/skills/git-review ~/.claude/skills/
 ```
 
 ### 可用 Skills
