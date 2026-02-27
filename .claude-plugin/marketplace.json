@@ -1,11 +1,11 @@
 {
-  "name": "scm-skills",
+  "name": "aswin-skills",
   "owner": {
-    "name": "Seat Team",
-    "email": "seat@maizuo.com"
+    "name": "Ashwin Yue",
+    "email": "ashwinyue@example.com"
   },
   "metadata": {
-    "description": "Skills shared by Seat team for code review and development",
+    "description": "Skills shared by Ashwin for code review and development",
     "version": "1.0.0"
   },
   "plugins": [
@@ -15,7 +15,7 @@
       "source": "./",
       "strict": false,
       "skills": [
-        "./git-review"
+        "./skills/git-review"
       ]
     }
   ]

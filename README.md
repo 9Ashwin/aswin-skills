@@ -1,4 +1,4 @@
-# SCM Skills
+# Aswin Skills
 
 [English](#english) | [中文](#中文)
 
@@ -8,22 +8,23 @@
 
 ## English
 
-Claude Code Skills repository for the Seat team, providing shared skills for code review and development.
+Claude Code Skills repository for code review and development.
 
 ### Installation
 
-> **Note**: `npx skills add` is not supported due to Gogs shallow clone limitation. Use the script below.
-
 ```bash
-# One-click install
-curl -sSL https://gogs.maizuo.com/seat/scm-skills/raw/main/install.sh | bash
+# Install via npx skills
+npx skills add https://github.com/ashwinyue/aswin-skills.git --skill git-review
+
+# Or install globally
+npx skills add https://github.com/ashwinyue/aswin-skills.git --skill git-review -g
 ```
 
 ### Available Skills
 
 | Skill | Description |
 |-------|-------------|
-| [git-review](git-review/) | Local code review tool for pre-push self-check |
+| [git-review](skills/git-review/) | Local code review tool for pre-push self-check |
 
 ---
 
@@ -31,22 +32,23 @@ curl -sSL https://gogs.maizuo.com/seat/scm-skills/raw/main/install.sh | bash
 
 ## 中文
 
-Seat 团队的 Claude Code Skills 仓库，提供代码审查和开发相关的共享技能。
+Claude Code Skills 仓库，提供代码审查和开发相关的共享技能。
 
 ### 安装
 
-> **注意**: 由于 Gogs 不支持浅克隆，`npx skills add` 无法使用。请使用以下脚本安装。
-
 ```bash
-# 一键安装
-curl -sSL https://gogs.maizuo.com/seat/scm-skills/raw/main/install.sh | bash
+# 通过 npx skills 安装
+npx skills add https://github.com/ashwinyue/aswin-skills.git --skill git-review
+
+# 或全局安装
+npx skills add https://github.com/ashwinyue/aswin-skills.git --skill git-review -g
 ```
 
 ### 可用 Skills
 
 | Skill | 描述 |
 |-------|------|
-| [git-review](git-review/) | 本地代码审查工具，用于 push 前自检 |
+| [git-review](skills/git-review/) | 本地代码审查工具，用于 push 前自检 |
 
 ### 审查范围
 
