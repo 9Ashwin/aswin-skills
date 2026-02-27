@@ -1,0 +1,22 @@
+{
+  "name": "seat-skills",
+  "owner": {
+    "name": "Seat Team",
+    "email": "seat@maizuo.com"
+  },
+  "metadata": {
+    "description": "Skills shared by Seat team for code review and development",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "dev-skills",
+      "description": "Development tools for code review",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/git-review"
+      ]
+    }
+  ]
+}
