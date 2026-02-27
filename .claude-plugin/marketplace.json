@@ -1,5 +1,5 @@
 {
-  "name": "seat-skills",
+  "name": "scm-skills",
   "owner": {
     "name": "Seat Team",
     "email": "seat@maizuo.com"
@@ -15,7 +15,7 @@
       "source": "./",
       "strict": false,
       "skills": [
-        "./skills/git-review"
+        "./git-review"
       ]
     }
   ]
