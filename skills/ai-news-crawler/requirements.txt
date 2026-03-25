@@ -1,0 +1,7 @@
+feedparser
+arxiv
+beautifulsoup4
+lxml
+requests
+jinja2
+pyyaml

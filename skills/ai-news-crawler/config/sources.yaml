@@ -1,0 +1,92 @@
+# AI 资讯爬虫 - 数据源配置
+# 优先级: 1=最高, 10=最低
+
+sources:
+  # 学术论文
+  arxiv_ai:
+    name: "ArXiv AI"
+    type: api
+    category: paper
+    priority: 1
+    enabled: true
+    config:
+      categories: ["cs.AI", "cs.LG", "cs.CL", "cs.CV"]
+      max_results: 20
+
+  # GitHub 趋势
+  github_trending:
+    name: "GitHub Trending"
+    type: web
+    category: code
+    priority: 2
+    enabled: true
+    config:
+      languages: ["", "python", "javascript", "typescript", "go", "rust"]
+      since: daily
+
+  # RSS 订阅源
+  rss_feeds:
+    - name: "OpenAI Blog"
+      url: "https://openai.com/news/rss.xml"
+      category: blog
+      priority: 2
+
+    - name: "HuggingFace Blog"
+      url: "https://huggingface.co/blog/feed.xml"
+      category: blog
+      priority: 2
+
+    - name: "BAIR Blog"
+      url: "http://bair.berkeley.edu/blog/feed.xml"
+      category: blog
+      priority: 3
+
+    - name: "Simon Willison"
+      url: "https://simonwillison.net/atom/everything/"
+      category: blog
+      priority: 3
+
+    - name: "Interconnects"
+      url: "https://www.interconnects.ai/feed"
+      category: blog
+      priority: 3
+
+    - name: "Sebastian Raschka"
+      url: "https://magazine.sebastianraschka.com/feed"
+      category: blog
+      priority: 3
+
+    - name: "a16z AI"
+      url: "https://a16z.com/feed/"
+      category: blog
+      priority: 4
+
+    - name: "MIT Technology Review"
+      url: "https://www.technologyreview.com/feed/"
+      category: news
+      priority: 2
+
+  # Reddit 社区
+  reddit:
+    - name: "MachineLearning"
+      subreddit: "MachineLearning"
+      category: discussion
+      priority: 3
+
+    - name: "LocalLLaMA"
+      subreddit: "LocalLLaMA"
+      category: discussion
+      priority: 3
+
+# 爬虫设置
+settings:
+  request_delay: 1.0  # 请求间隔（秒）
+  max_retries: 3
+  timeout: 30
+  user_agent: "Mozilla/5.0 (compatible; AI-News-Crawler/1.0)"
+
+# 去重设置
+deduplication:
+  url_expire_days: 30
+  simhash_threshold: 3  # 汉明距离阈值
+  max_history_items: 10000
