@@ -100,6 +100,9 @@ class GitHubCrawler:
             label = f"({lang})" if lang else "(All)"
             print(f"  [GitHub] Trending {label}: {len(repos)} repos")
 
+        # Sort by stars_today descending (most trending first)
+        all_repos.sort(key=lambda x: x.get("stars_today", 0), reverse=True)
+
         return all_repos
 
     def _fetch_language(self, language: str, since: str) -> List[Dict[str, Any]]:
@@ -166,9 +169,14 @@ class GitHubCrawler:
         desc_p = article.find("p", class_="col-9 color-fg-muted my-1 pr-4")
         description = desc_p.get_text(strip=True) if desc_p else ""
 
-        # Extract language
-        lang_span = article.find("span", itemprop="programmingLanguage")
-        actual_language = lang_span.get_text(strip=True) if lang_span else language
+        # Extract language color
+        language_color = ""
+        lang_color_span = article.find("span", class_="repo-language-color")
+        if lang_color_span:
+            style = lang_color_span.get("style", "")
+            match = re.search(r'background-color:\s*([^;]+)', style)
+            if match:
+                language_color = match.group(1).strip()
 
         # Parse stars number
         def _parse_number(text):

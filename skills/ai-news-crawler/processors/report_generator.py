@@ -109,8 +109,11 @@ class ReportGenerator:
         infra_items = [a for a in articles if a.get("dev_category") == "infra"]
         tutorial_items = [a for a in articles if a.get("dev_category") == "tutorial"]
 
-        # Sort by published date if available
-        for items in [llm_items, paper_items, code_items, tool_items, infra_items, tutorial_items]:
+        # Sort code items by stars_today (descending)
+        code_items.sort(key=lambda x: x.get("stars_today", 0) or 0, reverse=True)
+
+        # Sort other items by published date if available
+        for items in [llm_items, paper_items, tool_items, infra_items, tutorial_items]:
             try:
                 items.sort(key=lambda x: x.get("published") or datetime.min, reverse=True)
             except:

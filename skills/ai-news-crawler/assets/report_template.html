@@ -1,1091 +1,162 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 技术日报 - {{ report_date.strftime('%Y-%m-%d') }}</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <style>
-        :root {
-            --bg: #0d1117;
-            --fg: #e6edf3;
-            --card: #161b22;
-            --card-hover: #1c2333;
-            --border: #30363d;
-            --accent: #58a6ff;
-            --accent-gradient: linear-gradient(135deg, #58a6ff 0%, #8b5cf6 100%);
-            --muted: #8b949e;
-            --shadow: rgba(0, 0, 0, 0.3);
-            --shadow-hover: rgba(0, 0, 0, 0.4);
-            --tag-bg: #21262d;
-            --tag-text: #c9d1d9;
-            --glow: rgba(88, 166, 255, 0.15);
-            /* Category colors */
-            --llm: #ff6b6b;
-            --paper: #9775fa;
-            --code: #51cf66;
-            --tool: #339af0;
-            --infra: #ffa94d;
-            --tutorial: #ffd43b;
-        }
+<html lang="zh">
+<meta charset="UTF-8">
+<title>AI 技术日报 - {{ report_date.strftime('%Y-%m-%d') }}</title>
+<style>
+:root {
+    --bg: #ffffff; --fg: #0d1117; --card: #f6f8fa; --accent: #0969da;
+    --border: #e5e7eb; --muted: #656d76; --chip-bg: #c2410c;
+    --llm: #ff6b6b; --paper: #9775fa; --code: #51cf66; --star: #c2410c;
+}
+@media(prefers-color-scheme:dark) {
+    :root { --bg: #0d1117; --fg: #c9d1d9; --card: #161b22; --accent: #58a6ff;
+            --border: #30363d; --muted: #8b949e; }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--fg);
+     max-width:980px;margin:auto;padding:1rem;line-height:1.6}
+
+header{text-align:center;margin-bottom:1.5rem}
+h1{color:var(--accent);margin:0.5rem 0;font-size:1.8rem}
+.hero{width:120px;height:120px;border-radius:50%;object-fit:cover}
+.timestamp{font-size:0.85rem;opacity:0.7;margin-top:0.4rem}
+
+.summary{background:linear-gradient(135deg,var(--accent),#b623ff);color:#fff;
+         padding:1rem;border-radius:14px;margin-bottom:1.5rem;white-space:pre-wrap;
+         font-size:0.9rem;line-height:1.8}
+
+/* Tabs */
+.tabs{display:flex;gap:8px;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:8px}
+.tab-btn{padding:8px 16px;background:transparent;border:none;border-radius:8px;
+         color:var(--muted);cursor:pointer;font-size:0.9rem;font-weight:500}
+.tab-btn:hover{color:var(--fg);background:var(--card)}
+.tab-btn.active{color:#fff;background:var(--accent)}
+.tab-btn .count{font-size:0.75rem;margin-left:4px;opacity:0.8}
+
+.tab-content{display:none}
+.tab-content.active{display:block;animation:fadeIn 0.3s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+
+article{background:var(--card);border:1px solid var(--border);border-radius:12px;
+        padding:1rem;display:flex;flex-direction:column;gap:0.5rem;
+        animation:fadeInUp 0.5s ease both;position:relative}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+article h3{font-size:0.95rem;margin:0;line-height:1.4}
+article h3 a{color:var(--fg);text-decoration:none}
+article h3 a:hover{color:var(--accent);text-decoration:underline}
+
+.meta{font-size:0.8rem;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lang{display:flex;align-items:center;gap:4px}
+.lang-color{width:10px;height:10px;border-radius:50%}
+.stars-today{color:#c2410c;font-weight:600}
+
+.chip{position:absolute;top:1rem;right:1rem;padding:2px 10px;border-radius:999px;
+      font-size:0.75rem;font-weight:600;color:#fff;background:var(--chip-bg)}
+
+/* Takeaways */
+.takeaways{background:var(--card);border-left:4px solid var(--accent);
+           border-radius:8px;padding:1rem;margin-bottom:1.5rem}
+.takeaways h3{font-size:0.95rem;margin-bottom:0.5rem}
+.takeaways ul{margin:0;padding-left:1.2rem}
+.takeaways li{margin:0.3rem 0;font-size:0.85rem;color:var(--muted)}
+</style>
 
-        @media (prefers-color-scheme: light) {
-            :root {
-                --bg: #f5f7fa;
-                --fg: #111827;
-                --card: #ffffff;
-                --card-hover: #f8f9fa;
-                --border: #e5e7eb;
-                --accent: #667eea;
-                --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                --muted: #6b7280;
-                --shadow: rgba(0, 0, 0, 0.08);
-                --shadow-hover: rgba(0, 0, 0, 0.12);
-                --tag-bg: #edf2f7;
-                --tag-text: #4a5568;
-                --glow: rgba(102, 126, 234, 0.15);
-            }
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Fira Code', monospace;
-            background: var(--bg);
-            color: var(--fg);
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* Header with Hero */
-        .header {
-            background: var(--accent-gradient);
-            color: white;
-            padding: 60px 40px;
-            border-radius: 20px;
-            margin-bottom: 24px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 30px 30px;
-            opacity: 0.3;
-            animation: gridMove 20s linear infinite;
-        }
-
-        @keyframes gridMove {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(30px, 30px); }
-        }
-
-        .header-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .header-hero {
-            font-size: 4em;
-            margin-bottom: 16px;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .header h1 {
-            font-size: 2.8em;
-            margin-bottom: 12px;
-            font-weight: 800;
-            letter-spacing: -1px;
-        }
-
-        .header .date {
-            opacity: 0.9;
-            font-size: 1.2em;
-            margin-bottom: 8px;
-        }
-
-        .header .timestamp {
-            opacity: 0.7;
-            font-size: 0.9em;
-        }
-
-        /* Stats Bar */
-        .stats-bar {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-top: 24px;
-            padding-top: 24px;
-            border-top: 1px solid rgba(255,255,255,0.2);
-            flex-wrap: wrap;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 2em;
-            font-weight: 700;
-            display: block;
-        }
-
-        .stat-label {
-            font-size: 0.85em;
-            opacity: 0.8;
-        }
-
-        /* Source Group */
-        .source-group {
-            margin-bottom: 24px;
-        }
-
-        .source-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 16px;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            margin-bottom: 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .source-header:hover {
-            background: var(--card-hover);
-            border-color: var(--accent);
-        }
-
-        .source-icon {
-            font-size: 1.2em;
-        }
-
-        .source-name-group {
-            font-weight: 600;
-            color: var(--fg);
-            flex: 1;
-        }
-
-        .source-count {
-            background: var(--accent-gradient);
-            color: white;
-            padding: 2px 10px;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .source-toggle {
-            transition: transform 0.3s;
-        }
-
-        .source-group.collapsed .source-toggle {
-            transform: rotate(-90deg);
-        }
-
-        .source-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-            gap: 16px;
-        }
-
-        .source-group.collapsed .source-content {
-            display: none;
-        }
-        .overall-summary {
-            background: linear-gradient(135deg, #0969da 0%, #8E44AD 50%, #E91E63 100%);
-            color: #fff;
-            padding: 24px;
-            border-radius: 16px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-        }
-
-        .overall-summary h2 {
-            font-size: 1.2rem;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .overall-summary p {
-            line-height: 1.8;
-            white-space: pre-wrap;
-            font-size: 0.95rem;
-        }
-
-        /* Key Takeaways - Today Highlights */
-        .key-takeaways {
-            background: linear-gradient(135deg, #1a1f2e 0%, #242b3d 100%);
-            border: 1px solid var(--border);
-            border-left: 4px solid #ffd43b;
-            border-radius: 16px;
-            padding: 20px 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 14px var(--shadow);
-        }
-
-        @media (prefers-color-scheme: light) {
-            .key-takeaways {
-                background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
-                border-left: 4px solid #eab308;
-            }
-        }
-
-        .key-takeaways h2 {
-            font-size: 1.1rem;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #ffd43b;
-        }
-
-        @media (prefers-color-scheme: light) {
-            .key-takeaways h2 {
-                color: #854d0e;
-            }
-        }
-
-        .key-takeaways ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .key-takeaways li {
-            padding: 10px 0 10px 28px;
-            position: relative;
-            border-bottom: 1px dashed var(--border);
-            line-height: 1.6;
-            font-size: 0.95rem;
-        }
-
-        .key-takeaways li:last-child {
-            border-bottom: none;
-        }
-
-        .key-takeaways li::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 8px;
-            height: 8px;
-            background: #ffd43b;
-            border-radius: 50%;
-            box-shadow: 0 0 8px rgba(255, 212, 59, 0.5);
-        }
-
-        @media (prefers-color-scheme: light) {
-            .key-takeaways li::before {
-                background: #eab308;
-            }
-        }
-
-        /* Tab Navigation */
-        .tab-nav {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-
-        .tab-btn {
-            padding: 12px 20px;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--muted);
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .tab-btn:hover {
-            background: var(--card-hover);
-            color: var(--fg);
-            transform: translateY(-2px);
-        }
-
-        .tab-btn.active {
-            background: var(--accent-gradient);
-            color: white;
-            border-color: transparent;
-        }
-
-        .tab-btn .count {
-            background: rgba(255,255,255,0.2);
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 0.8rem;
-        }
-
-        .tab-btn[data-category="llm"].active { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); }
-        .tab-btn[data-category="papers"].active { background: linear-gradient(135deg, #9775fa 0%, #7950f2 100%); }
-        .tab-btn[data-category="code"].active { background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%); }
-        .tab-btn[data-category="tool"].active { background: linear-gradient(135deg, #339af0 0%, #228be6 100%); }
-        .tab-btn[data-category="infra"].active { background: linear-gradient(135deg, #ffa94d 0%, #ff922b 100%); }
-        .tab-btn[data-category="tutorial"].active { background: linear-gradient(135deg, #ffd43b 0%, #fcc419 100%); color: #333; }
-
-        /* Tab Content */
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.4s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Category Summary */
-        .cat-summary {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-left: 4px solid var(--accent);
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-            font-size: 0.92rem;
-            line-height: 1.8;
-        }
-
-        .cat-summary.llm { border-left-color: var(--llm); }
-        .cat-summary.papers { border-left-color: var(--paper); }
-        .cat-summary.code { border-left-color: var(--code); }
-        .cat-summary.tool { border-left-color: var(--tool); }
-        .cat-summary.infra { border-left-color: var(--infra); }
-        .cat-summary.tutorial { border-left-color: var(--tutorial); }
-
-        /* Grid Layout */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-            gap: 16px;
-        }
-
-        /* Article Card */
-        .article-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 18px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
-            animation: fadeInUp 0.5s ease both;
-            position: relative;
-        }
-
-        .article-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 24px var(--shadow-hover);
-            border-color: var(--accent);
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .source-line {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .source-name {
-            font-size: 0.75rem;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
-        }
-
-        .complexity-badge {
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: white;
-        }
-
-        .applicability-badge {
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            background: var(--tag-bg);
-            color: var(--tag-text);
-        }
-
-        .chip {
-            padding: 3px 10px;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: white;
-        }
-
-        .chip.star { background: var(--infra); }
-        .chip.today { background: var(--llm); }
-        .chip.lang { background: var(--tool); }
-
-        .article-title {
-            font-size: 1.05rem;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-
-        .article-title a {
-            color: var(--fg);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .article-title a:hover {
-            color: var(--accent);
-        }
-
-        .article-meta {
-            font-size: 0.82rem;
-            color: var(--muted);
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .article-brief {
-            font-size: 0.9rem;
-            color: #ffd43b;
-            line-height: 1.5;
-            padding: 8px 12px;
-            background: rgba(255,212,59,0.08);
-            border-radius: 6px;
-            border-left: 3px solid #ffd43b;
-        }
-
-        .article-snippet {
-            font-size: 0.85rem;
-            color: var(--muted);
-            line-height: 1.6;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        /* Tech Highlights */
-        .tech-highlights {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 4px;
-        }
-
-        .tech-badge {
-            padding: 3px 10px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: white;
-        }
-
-        /* Code Links */
-        .code-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 4px;
-        }
-
-        .code-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 10px;
-            background: var(--tag-bg);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 0.8rem;
-            color: var(--accent);
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-
-        .code-link:hover {
-            background: var(--accent);
-            color: white;
-        }
-
-        /* Tags */
-        .tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 4px;
-        }
-
-        .tag {
-            display: inline-block;
-            background: var(--tag-bg);
-            color: var(--tag-text);
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        /* Copy Button */
-        .copy-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            padding: 4px 8px;
-            background: var(--tag-bg);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .article-card:hover .copy-btn {
-            opacity: 1;
-        }
-
-        .copy-btn:hover {
-            background: var(--accent);
-            color: white;
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 40px;
-            color: var(--muted);
-            font-size: 0.9em;
-            border-top: 1px solid var(--border);
-            margin-top: 40px;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header { padding: 30px 20px; }
-            .header h1 { font-size: 1.8em; }
-            .tab-btn { padding: 10px 14px; font-size: 0.85rem; }
-            .tab-btn .count { display: none; }
-            .container { padding: 15px; }
-            .grid { grid-template-columns: 1fr; }
-        }
-
-        /* Code highlighting */
-        pre {
-            background: #1e1e1e;
-            border-radius: 8px;
-            padding: 12px;
-            overflow-x: auto;
-        }
-
-        code {
-            font-family: 'Fira Code', 'Consolas', monospace;
-            font-size: 0.85rem;
-        }
-    </style>
-</head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-content">
-                <div class="header-hero">🚀</div>
-                <h1>AI 技术日报</h1>
-                <div class="date">{{ report_date.strftime('%Y年%m月%d日') }}</div>
-                <div class="timestamp">更新时间：{{ report_date.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+<header>
+    <img class="hero" src="https://octodex.github.com/images/daftpunktocat-guy.gif" alt="AI Daily">
+    <h1>AI 技术日报</h1>
+    <div class="timestamp">更新时间：{{ report_date.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+</header>
 
-                <!-- Stats Bar -->
-                <div class="stats-bar">
-                    <div class="stat-item">
-                        <span class="stat-value">{{ stats.total }}</span>
-                        <span class="stat-label">内容总数</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">{{ stats.source_count }}</span>
-                        <span class="stat-label">数据来源</span>
-                    </div>
-                    {% if stats.github_count > 0 %}
-                    <div class="stat-item">
-                        <span class="stat-value">{{ "%.0f"|format(stats.total_new_stars) }}</span>
-                        <span class="stat-label">今日新增 ★</span>
-                    </div>
-                    {% endif %}
-                    {% if stats.papers_count > 0 %}
-                    <div class="stat-item">
-                        <span class="stat-value">{{ stats.papers_count }}</span>
-                        <span class="stat-label">学术论文</span>
-                    </div>
-                    {% endif %}
-                </div>
+{% if overall_summary %}
+<section class="summary">{{ overall_summary }}</section>
+{% endif %}
+
+{% if key_takeaways %}
+<div class="takeaways">
+    <h3>🎯 今日要点</h3>
+    <ul>{% for t in key_takeaways %}<li>{{ t }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<!-- Tabs -->
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('github', this)">
+        💻 GitHub Trending <span class="count">{{ code_items|length }}</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('arxiv', this)">
+        📄 ArXiv 论文 <span class="count">{{ paper_items|length }}</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('blogs', this)">
+        📝 技术博客 <span class="count">{{ llm_count + tool_count + infra_count + tutorial_count }}</span>
+    </button>
+</div>
+
+<!-- GitHub Tab -->
+<div id="tab-github" class="tab-content active">
+    <section class="grid">
+    {% for item in code_items %}
+        <article style="animation-delay:{{ loop.index * 0.05 }}s">
+            {% set total = item.stars or 0 %}
+            <span class="chip" style="background:{% if total >= 20000 %}#c2410c{% elif total >= 5000 %}#2563eb{% else %}#d97706{% endif %}">★ {{ "{:,}".format(total) }}</span>
+            <h3><a href="{{ item.url }}" target="_blank">{{ item.title }}</a></h3>
+            <div class="meta">
+                {% if item.language %}
+                <span class="lang"><span class="lang-color" style="background:{{ item.language_color or '#58a6ff' }}"></span>{{ item.language }}</span>
+                {% endif %}
+                {% if item.stars_today %}
+                <span class="stars-today">🔥 今日 +{{ item.stars_today }}</span>
+                {% endif %}
             </div>
-        </div>
+            <div class="meta">{{ item.summary or '' }}</div>
+        </article>
+    {% endfor %}
+    </section>
+</div>
 
-        <!-- Key Takeaways -->
-        {% if key_takeaways %}
-        <div class="key-takeaways">
-            <h2>🎯 今日要点</h2>
-            <ul>
-                {% for takeaway in key_takeaways %}
-                <li>{{ takeaway }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-
-        <!-- Overall Summary -->
-        {% if overall_summary %}
-        <div class="overall-summary">
-            <h2>📊 今日 AI 技术趋势</h2>
-            <p>{{ overall_summary }}</p>
-        </div>
-        {% endif %}
-
-        <!-- Tab Navigation -->
-        <div class="tab-nav">
-            <button class="tab-btn active" data-category="llm" onclick="switchTab('llm')">
-                🤖 LLM/模型 <span class="count">{{ llm_count }}</span>
-            </button>
-            <button class="tab-btn" data-category="papers" onclick="switchTab('papers')">
-                📄 前沿论文 <span class="count">{{ papers_count }}</span>
-            </button>
-            <button class="tab-btn" data-category="code" onclick="switchTab('code')">
-                💻 开源代码 <span class="count">{{ code_count }}</span>
-            </button>
-            <button class="tab-btn" data-category="tool" onclick="switchTab('tool')">
-                🛠️ 开发工具 <span class="count">{{ tool_count }}</span>
-            </button>
-            <button class="tab-btn" data-category="infra" onclick="switchTab('infra')">
-                ⚙️ 基础设施 <span class="count">{{ infra_count }}</span>
-            </button>
-            <button class="tab-btn" data-category="tutorial" onclick="switchTab('tutorial')">
-                📚 技术教程 <span class="count">{{ tutorial_count }}</span>
-            </button>
-        </div>
-
-        <!-- Tab: LLM -->
-        <div id="tab-llm" class="tab-content active">
-            {% if llm_summary %}
-            <div class="cat-summary llm">{{ llm_summary }}</div>
+<!-- ArXiv Tab -->
+<div id="tab-arxiv" class="tab-content">
+    <section class="grid">
+    {% for item in paper_items %}
+        <article style="animation-delay:{{ loop.index * 0.05 }}s">
+            {% set cat = item.source.replace('ArXiv ', '') if item.source else 'cs.AI' %}
+            <span class="chip" style="background:var(--paper)">{{ cat }}</span>
+            <h3><a href="{{ item.url }}" target="_blank">{{ item.title }}</a></h3>
+            <div class="meta">{{ item.author or '' }}</div>
+            {% if item.metadata and item.metadata.tech_highlights %}
+            <div class="meta">{{ item.metadata.tech_highlights[0] }}</div>
             {% endif %}
+        </article>
+    {% endfor %}
+    </section>
+</div>
 
-            <!-- Group by Source -->
-            {% for source, items in llm_by_source.items() %}
-            <div class="source-group" data-group="{{ source }}">
-                <div class="source-header" onclick="toggleGroup(this)">
-                    <span class="source-icon">🤖</span>
-                    <span class="source-name-group">{{ source or 'Other' }}</span>
-                    <span class="source-count">{{ items|length }}</span>
-                    <span class="source-toggle">▼</span>
-                </div>
-                <div class="source-content">
-                    {% for item in items %}
-                    <div class="article-card" style="animation-delay: {{ loop.index * 0.05 }}s">
-                        <div class="source-line">
-                            <span class="source-name">{{ item.source }}</span>
-                            {% if item.published %}
-                            <span class="chip lang">{{ item.published[:10] if item.published is string else item.published.strftime('%m-%d') }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="article-title">
-                            <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
-                        </div>
-                        <div class="article-meta">
-                            {% if item.author %}<span>{{ item.author }}</span>{% endif %}
-                        </div>
-                        {% if item.brief %}
-                        <div class="article-brief">{{ item.brief }}</div>
-                        {% endif %}
-                        <div class="article-snippet">{{ item.summary or item.description or '' | truncate(180) }}</div>
-                        {% if item.tags %}
-                        <div class="tags">
-                            {% for tag in item.tags[:4] %}
-                            <span class="tag">{{ tag }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        <button class="copy-btn" onclick="copyTitle('{{ item.title | replace("'", "\\'") }}')">复制</button>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+<!-- Blogs Tab -->
+<div id="tab-blogs" class="tab-content">
+    <section class="grid">
+    {% set all_blogs = llm_items + tool_items + infra_items + tutorial_items %}
+    {% for item in all_blogs %}
+        <article style="animation-delay:{{ loop.index * 0.05 }}s">
+            <span class="chip" style="background:var(--llm)">{{ item.source }}</span>
+            <h3><a href="{{ item.url }}" target="_blank">{{ item.title }}</a></h3>
+            <div class="meta">{{ item.published[:10] if item.published else '' }}</div>
+            <div class="meta">{{ (item.summary or '')[:100] }}...</div>
+        </article>
+    {% endfor %}
+    </section>
+</div>
 
-        <!-- Tab: Papers -->
-        <div id="tab-papers" class="tab-content">
-            {% if papers_summary %}
-            <div class="cat-summary papers">{{ papers_summary }}</div>
-            {% endif %}
-
-            <!-- Group by Source/Category -->
-            {% for source, items in papers_by_source.items() %}
-            <div class="source-group" data-group="{{ source }}">
-                <div class="source-header" onclick="toggleGroup(this)">
-                    <span class="source-icon">📄</span>
-                    <span class="source-name-group">{{ source or 'ArXiv' }}</span>
-                    <span class="source-count">{{ items|length }}</span>
-                    <span class="source-toggle">▼</span>
-                </div>
-                <div class="source-content">
-                    {% for item in items %}
-                    <div class="article-card" style="animation-delay: {{ loop.index * 0.05 }}s">
-                        <div class="source-line">
-                            <span class="source-name">{{ item.metadata.primary_category if item.metadata else 'cs.AI' }}</span>
-                            <div>
-                                {% if item.metadata and item.metadata.complexity %}
-                                <span class="complexity-badge" style="background: {% if item.metadata.complexity == '入门' %}#27ae60{% elif item.metadata.complexity == '高阶' %}#e74c3c{% else %}#f39c12{% endif %}">{{ item.metadata.complexity }}</span>
-                                {% endif %}
-                                {% if item.published %}
-                                <span class="chip lang">{{ item.published[:10] if item.published is string else item.published.strftime('%m-%d') }}</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="article-title">
-                            <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
-                        </div>
-                        <div class="article-meta">
-                            {% if item.author %}<span>{{ item.author }}</span>{% endif %}
-                            {% if item.metadata and item.metadata.applicability %}
-                            <span class="applicability-badge">{{ item.metadata.applicability }}</span>
-                            {% endif %}
-                        </div>
-                        {% if item.brief %}
-                        <div class="article-brief">{{ item.brief }}</div>
-                        {% endif %}
-                        {% if item.metadata and item.metadata.tech_highlights %}
-                        <div class="tech-highlights">
-                            {% for hl in item.metadata.tech_highlights[:4] %}
-                            <span class="tech-badge" style="background: {% if '性能' in hl %}#e74c3c{% elif '架构' in hl %}#9b59b6{% elif '规模' in hl %}#3498db{% else %}#27ae60{% endif %}">{{ hl }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        <div class="article-snippet">{{ item.summary or '' | truncate(200) }}</div>
-                        {% if item.metadata and item.metadata.code_links %}
-                        <div class="code-links">
-                            {% for link in item.metadata.code_links[:2] %}
-                            <a href="{{ link.url }}" class="code-link" target="_blank">
-                                {% if link.type == 'github' %}📦{% elif link.type == 'huggingface' %}🤗{% else %}🔗{% endif %}
-                                {{ link.type }}
-                            </a>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        <button class="copy-btn" onclick="copyArxiv('{{ item.metadata.arxiv_id if item.metadata else '' }}', '{{ item.title | replace("'", "\\'") }}')">引用</button>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Tab: Code -->
-        <div id="tab-code" class="tab-content">
-            {% if code_summary %}
-            <div class="cat-summary code">{{ code_summary }}</div>
-            {% endif %}
-
-            <!-- Group by Language -->
-            {% for lang, items in code_by_source.items() %}
-            <div class="source-group" data-group="{{ lang }}">
-                <div class="source-header" onclick="toggleGroup(this)">
-                    <span class="source-icon">💻</span>
-                    <span class="source-name-group">{{ lang or 'Unknown' }}</span>
-                    <span class="source-count">{{ items|length }}</span>
-                    <span class="source-toggle">▼</span>
-                </div>
-                <div class="source-content">
-                    {% for item in items %}
-                    <div class="article-card" style="animation-delay: {{ loop.index * 0.05 }}s">
-                        <div class="source-line">
-                            <span class="source-name">{{ item.source or lang }}</span>
-                            <div>
-                                {% if item.stars_today %}
-                                <span class="chip today">+{{ item.stars_today }} ★ today</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="article-title">
-                            <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
-                        </div>
-                        <div class="article-meta">
-                            {% if item.author %}<span>{{ item.author }}</span>{% endif %}
-                            <span>★ {{ item.stars or 0 }} total</span>
-                        </div>
-                        {% if item.brief %}
-                        <div class="article-brief">{{ item.brief }}</div>
-                        {% endif %}
-                        <div class="article-snippet">{{ item.summary or item.description or '' | truncate(180) }}</div>
-                        {% if item.tags %}
-                        <div class="tags">
-                            {% for tag in item.tags[:4] %}
-                            <span class="tag">{{ tag }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        <button class="copy-btn" onclick="copyTitle('{{ item.title | replace("'", "\\'") }}')">复制</button>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Tab: Tools -->
-        <div id="tab-tool" class="tab-content">
-            {% if tool_summary %}
-            <div class="cat-summary tool">{{ tool_summary }}</div>
-            {% endif %}
-
-            {% for source, items in tool_by_source.items() %}
-            <div class="source-group" data-group="{{ source }}">
-                <div class="source-header" onclick="toggleGroup(this)">
-                    <span class="source-icon">🛠️</span>
-                    <span class="source-name-group">{{ source or 'Other' }}</span>
-                    <span class="source-count">{{ items|length }}</span>
-                    <span class="source-toggle">▼</span>
-                </div>
-                <div class="source-content">
-                    {% for item in items %}
-                    <div class="article-card" style="animation-delay: {{ loop.index * 0.05 }}s">
-                        <div class="source-line">
-                            <span class="source-name">{{ item.source }}</span>
-                            {% if item.published %}
-                            <span class="chip lang">{{ item.published[:10] if item.published is string else item.published.strftime('%m-%d') }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="article-title">
-                            <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
-                        </div>
-                        <div class="article-meta">
-                            {% if item.author %}<span>{{ item.author }}</span>{% endif %}
-                        </div>
-                        {% if item.brief %}
-                        <div class="article-brief">{{ item.brief }}</div>
-                        {% endif %}
-                        <div class="article-snippet">{{ item.summary or item.description or '' | truncate(180) }}</div>
-                        {% if item.tags %}
-                        <div class="tags">
-                            {% for tag in item.tags[:4] %}
-                            <span class="tag">{{ tag }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        <button class="copy-btn" onclick="copyTitle('{{ item.title | replace("'", "\\'") }}')">复制</button>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Tab: Infra -->
-        <div id="tab-infra" class="tab-content">
-            {% if infra_summary %}
-            <div class="cat-summary infra">{{ infra_summary }}</div>
-            {% endif %}
-
-            {% for source, items in infra_by_source.items() %}
-            <div class="source-group" data-group="{{ source }}">
-                <div class="source-header" onclick="toggleGroup(this)">
-                    <span class="source-icon">⚙️</span>
-                    <span class="source-name-group">{{ source or 'Other' }}</span>
-                    <span class="source-count">{{ items|length }}</span>
-                    <span class="source-toggle">▼</span>
-                </div>
-                <div class="source-content">
-                    {% for item in items %}
-                    <div class="article-card" style="animation-delay: {{ loop.index * 0.05 }}s">
-                        <div class="source-line">
-                            <span class="source-name">{{ item.source }}</span>
-                            {% if item.published %}
-                            <span class="chip lang">{{ item.published[:10] if item.published is string else item.published.strftime('%m-%d') }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="article-title">
-                            <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
-                        </div>
-                        <div class="article-meta">
-                            {% if item.author %}<span>{{ item.author }}</span>{% endif %}
-                        </div>
-                        {% if item.brief %}
-                        <div class="article-brief">{{ item.brief }}</div>
-                        {% endif %}
-                        <div class="article-snippet">{{ item.summary or item.description or '' | truncate(180) }}</div>
-                        {% if item.tags %}
-                        <div class="tags">
-                            {% for tag in item.tags[:4] %}
-                            <span class="tag">{{ tag }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        <button class="copy-btn" onclick="copyTitle('{{ item.title | replace("'", "\\'") }}')">复制</button>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Tab: Tutorial -->
-        <div id="tab-tutorial" class="tab-content">
-            {% if tutorial_summary %}
-            <div class="cat-summary tutorial">{{ tutorial_summary }}</div>
-            {% endif %}
-
-            {% for source, items in tutorial_by_source.items() %}
-            <div class="source-group" data-group="{{ source }}">
-                <div class="source-header" onclick="toggleGroup(this)">
-                    <span class="source-icon">📚</span>
-                    <span class="source-name-group">{{ source or 'Other' }}</span>
-                    <span class="source-count">{{ items|length }}</span>
-                    <span class="source-toggle">▼</span>
-                </div>
-                <div class="source-content">
-                    {% for item in items %}
-                    <div class="article-card" style="animation-delay: {{ loop.index * 0.05 }}s">
-                        <div class="source-line">
-                            <span class="source-name">{{ item.source }}</span>
-                            {% if item.published %}
-                            <span class="chip lang">{{ item.published[:10] if item.published is string else item.published.strftime('%m-%d') }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="article-title">
-                            <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
-                        </div>
-                        <div class="article-meta">
-                            {% if item.author %}<span>{{ item.author }}</span>{% endif %}
-                        </div>
-                        {% if item.brief %}
-                        <div class="article-brief">{{ item.brief }}</div>
-                        {% endif %}
-                        <div class="article-snippet">{{ item.summary or item.description or '' | truncate(180) }}</div>
-                        {% if item.tags %}
-                        <div class="tags">
-                            {% for tag in item.tags[:4] %}
-                            <span class="tag">{{ tag }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        <button class="copy-btn" onclick="copyTitle('{{ item.title | replace("'", "\\'") }}')">复制</button>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <div class="footer">
-            <p>由 AI News Crawler 生成 | Developer Edition</p>
-            <p>{{ report_date.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-        </div>
-    </div>
-
-    <script>
-        function switchTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            // Show selected tab
-            document.getElementById('tab-' + tabName).classList.add('active');
-
-            // Update button states
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.closest('.tab-btn').classList.add('active');
-        }
-
-        function toggleGroup(header) {
-            const group = header.closest('.source-group');
-            group.classList.toggle('collapsed');
-        }
-
-        function copyTitle(title) {
-            navigator.clipboard.writeText(title).then(() => {
-                showToast('标题已复制');
-            });
-        }
-
-        function copyArxiv(arxivId, title) {
-            const citation = `[${title}](https://arxiv.org/abs/${arxivId})`;
-            navigator.clipboard.writeText(citation).then(() => {
-                showToast('引用已复制');
-            });
-        }
-
-        function showToast(message) {
-            const toast = document.createElement('div');
-            toast.textContent = message;
-            toast.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: var(--accent);
-                color: white;
-                padding: 10px 20px;
-                border-radius: 8px;
-                z-index: 1000;
-                font-size: 0.9rem;
-            `;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2000);
-        }
-
-        // Initialize syntax highlighting
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof hljs !== 'undefined') {
-                hljs.highlightAll();
-            }
-        });
-    </script>
+<script>
+function switchTab(name, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+}
+</script>
 </body>
 </html>
