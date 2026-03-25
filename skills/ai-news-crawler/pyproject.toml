@@ -1,0 +1,38 @@
+[project]
+name = "ai-news-crawler"
+version = "1.0.0"
+description = "AI News Crawler - Aggregate AI news from ArXiv, GitHub, and RSS feeds"
+readme = "SKILL.md"
+requires-python = ">=3.8"
+dependencies = [
+    "feedparser",
+    "arxiv",
+    "beautifulsoup4",
+    "lxml",
+    "requests",
+    "jinja2",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "ruff",
+]
+ai = [
+    "anthropic",
+    "openai",
+]
+
+[tool.uv]
+python-downloads = "automatic"
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]

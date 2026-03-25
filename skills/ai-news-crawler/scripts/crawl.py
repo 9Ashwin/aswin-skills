@@ -102,7 +102,7 @@ def run_crawler(config_path: str = None, output_dir: str = None) -> str:
     config = load_config(config_path)
 
     if output_dir is None:
-        output_dir = "/mnt/user-data/outputs/ai-news"
+        output_dir = "./output"
 
     settings = config.get("settings", {})
     sources = config.get("sources", {})
@@ -189,8 +189,8 @@ def main():
     )
     parser.add_argument(
         "--output-dir",
-        default="/mnt/user-data/outputs/ai-news",
-        help="Output directory (default: /mnt/user-data/outputs/ai-news)"
+        default="./output",
+        help="Output directory (default: ./output)"
     )
 
     args = parser.parse_args()

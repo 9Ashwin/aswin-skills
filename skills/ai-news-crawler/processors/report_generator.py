@@ -1,15 +1,16 @@
 """
-HTML report generator - uses Jinja2 templates
+HTML report generator - Developer focused with code highlighting
 """
 import os
 from datetime import datetime
 from typing import List, Dict, Any
+from collections import defaultdict, Counter
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 
 class ReportGenerator:
-    """HTML daily report generator"""
+    """HTML daily report generator for developers"""
 
     def __init__(self, template_dir: str = None):
         """
@@ -30,19 +31,69 @@ class ReportGenerator:
         )
         self.template = self.env.get_template("report_template.html")
 
+    def _group_by_source(self, items: List[Dict]) -> Dict[str, List[Dict]]:
+        """Group articles by source"""
+        groups = defaultdict(list)
+        for item in items:
+            source = item.get("source", "Other")
+            groups[source].append(item)
+        return dict(groups)
+
+    def _calculate_stats(self, articles: List[Dict]) -> Dict[str, Any]:
+        """Calculate statistics for the report"""
+        total = len(articles)
+
+        # Count unique sources
+        sources = Counter([a.get("source", "Unknown") for a in articles])
+        source_count = len(sources)
+
+        # Count by category
+        categories = Counter([a.get("dev_category", "other") for a in articles])
+
+        # GitHub stats
+        github_items = [a for a in articles if a.get("dev_category") == "code"]
+        total_stars = sum(a.get("stars", 0) for a in github_items)
+        total_new_stars = sum(a.get("stars_today", 0) for a in github_items)
+
+        # Top languages
+        languages = Counter([a.get("language", "Unknown") for a in github_items if a.get("language")]).most_common(5)
+
+        # Paper stats
+        paper_items = [a for a in articles if a.get("dev_category") == "paper"]
+        paper_categories = Counter([a.get("source", "").replace("ArXiv ", "") for a in paper_items]).most_common(3)
+
+        return {
+            "total": total,
+            "source_count": source_count,
+            "top_sources": sources.most_common(5),
+            "categories": dict(categories),
+            "github_count": len(github_items),
+            "total_stars": total_stars,
+            "total_new_stars": total_new_stars,
+            "top_languages": languages,
+            "papers_count": len(paper_items),
+            "top_paper_categories": paper_categories
+        }
+
     def generate(
         self,
         articles: List[Dict[str, Any]],
         report_date: datetime = None,
-        summary: str = None
+        overall_summary: str = None,
+        category_summaries: Dict[str, str] = None,
+        key_takeaways: List[str] = None,
+        include_code_snippets: bool = True
     ) -> str:
         """
-        Generate HTML daily report
+        Generate HTML daily report with developer-focused categories
 
         Args:
             articles: List of article dictionaries
             report_date: Report date
-            summary: AI-generated summary of trends (optional)
+            overall_summary: AI-generated overall summary
+            category_summaries: Dict with category summaries
+            key_takeaways: List of key takeaway strings
+            include_code_snippets: Whether to include code snippets
 
         Returns:
             HTML string
@@ -50,58 +101,75 @@ class ReportGenerator:
         if report_date is None:
             report_date = datetime.now()
 
-        grouped = self._group_by_category(articles)
-        stats = self._calc_stats(articles)
+        # Group by dev_category
+        llm_items = [a for a in articles if a.get("dev_category") == "llm"]
+        paper_items = [a for a in articles if a.get("dev_category") == "paper"]
+        code_items = [a for a in articles if a.get("dev_category") == "code"]
+        tool_items = [a for a in articles if a.get("dev_category") == "tool"]
+        infra_items = [a for a in articles if a.get("dev_category") == "infra"]
+        tutorial_items = [a for a in articles if a.get("dev_category") == "tutorial"]
+
+        # Sort by published date if available
+        for items in [llm_items, paper_items, code_items, tool_items, infra_items, tutorial_items]:
+            try:
+                items.sort(key=lambda x: x.get("published") or datetime.min, reverse=True)
+            except:
+                pass
+
+        # Group by source for each category
+        llm_by_source = self._group_by_source(llm_items)
+        papers_by_source = self._group_by_source(paper_items)
+        code_by_source = self._group_by_source(code_items)
+        tool_by_source = self._group_by_source(tool_items)
+        infra_by_source = self._group_by_source(infra_items)
+        tutorial_by_source = self._group_by_source(tutorial_items)
+
+        # Calculate stats
+        stats = self._calculate_stats(articles)
+
+        category_summaries = category_summaries or {}
+        key_takeaways = key_takeaways or []
 
         html = self.template.render(
-            grouped=grouped,
+            # Category items
+            llm_items=llm_items,
+            paper_items=paper_items,
+            code_items=code_items,
+            tool_items=tool_items,
+            infra_items=infra_items,
+            tutorial_items=tutorial_items,
+            # Source groupings
+            llm_by_source=llm_by_source,
+            papers_by_source=papers_by_source,
+            code_by_source=code_by_source,
+            tool_by_source=tool_by_source,
+            infra_by_source=infra_by_source,
+            tutorial_by_source=tutorial_by_source,
+            # Counts
+            llm_count=len(llm_items),
+            papers_count=len(paper_items),
+            code_count=len(code_items),
+            tool_count=len(tool_items),
+            infra_count=len(infra_items),
+            tutorial_count=len(tutorial_items),
+            total_count=len(articles),
+            # Stats
             stats=stats,
+            # Key takeaways
+            key_takeaways=key_takeaways,
+            # Metadata
             report_date=report_date,
-            summary=summary
+            overall_summary=overall_summary,
+            llm_summary=category_summaries.get("llm"),
+            papers_summary=category_summaries.get("papers"),
+            code_summary=category_summaries.get("code"),
+            tool_summary=category_summaries.get("tool"),
+            infra_summary=category_summaries.get("infra"),
+            tutorial_summary=category_summaries.get("tutorial"),
+            include_code_snippets=include_code_snippets
         )
 
         return html
-
-    def _group_by_category(self, articles: List[Dict[str, Any]]) -> Dict[str, List[Dict]]:
-        """Group articles by category"""
-        groups = {
-            "研究论文": [],
-            "开源项目": [],
-            "技术博客": [],
-            "社区讨论": [],
-            "科技资讯": [],
-            "其他": []
-        }
-
-        for article in articles:
-            cat = article.get("category", "other")
-
-            if cat == "paper":
-                groups["研究论文"].append(article)
-            elif cat == "code":
-                groups["开源项目"].append(article)
-            elif cat == "blog":
-                groups["技术博客"].append(article)
-            elif cat == "discussion":
-                groups["社区讨论"].append(article)
-            elif cat == "news":
-                groups["科技资讯"].append(article)
-            else:
-                groups["其他"].append(article)
-
-        # Filter empty categories
-        return {k: v for k, v in groups.items() if v}
-
-    def _calc_stats(self, articles: List[Dict[str, Any]]) -> Dict[str, int]:
-        """Calculate statistics"""
-        return {
-            "total": len(articles),
-            "paper": len([a for a in articles if a.get("category") == "paper"]),
-            "code": len([a for a in articles if a.get("category") == "code"]),
-            "blog": len([a for a in articles if a.get("category") == "blog"]),
-            "discussion": len([a for a in articles if a.get("category") == "discussion"]),
-            "news": len([a for a in articles if a.get("category") == "news"])
-        }
 
     def save(self, html: str, output_path: str):
         """Save HTML file"""

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 AI News Crawler - Main Entry Point
 
@@ -20,6 +19,57 @@ from spiders.arxiv_spider import ArXivCrawler
 from spiders.github_spider import GitHubCrawler
 from processors.deduplicator import Deduplicator
 from processors.report_generator import ReportGenerator
+from processors.tech_summarizer import TechSummarizer
+
+
+def validate_config(config: dict) -> list:
+    """
+    Validate configuration and return list of errors
+
+    Args:
+        config: Configuration dictionary
+
+    Returns:
+        List of validation error messages
+    """
+    errors = []
+
+    # Validate sources
+    sources = config.get("sources", {})
+
+    # ArXiv config validation
+    arxiv_cfg = sources.get("arxiv_ai", {}).get("config", {})
+    if arxiv_cfg:
+        max_results = arxiv_cfg.get("max_results", 20)
+        if not isinstance(max_results, int) or max_results < 1 or max_results > 100:
+            errors.append("arxiv_ai.config.max_results must be an integer between 1 and 100")
+
+        days_back = arxiv_cfg.get("days_back", 3)
+        if not isinstance(days_back, int) or days_back < 1 or days_back > 30:
+            errors.append("arxiv_ai.config.days_back must be an integer between 1 and 30")
+
+    # GitHub config validation
+    github_cfg = sources.get("github_trending", {}).get("config", {})
+    if github_cfg:
+        since = github_cfg.get("since", "daily")
+        if since not in ["daily", "weekly", "monthly"]:
+            errors.append("github_trending.config.since must be 'daily', 'weekly', or 'monthly'")
+
+        min_stars = github_cfg.get("min_stars", 50)
+        if not isinstance(min_stars, int) or min_stars < 0:
+            errors.append("github_trending.config.min_stars must be a non-negative integer")
+
+    # Settings validation
+    settings = config.get("settings", {})
+    request_delay = settings.get("request_delay", 1.0)
+    if not isinstance(request_delay, (int, float)) or request_delay < 0:
+        errors.append("settings.request_delay must be a non-negative number")
+
+    max_retries = settings.get("max_retries", 3)
+    if not isinstance(max_retries, int) or max_retries < 0 or max_retries > 10:
+        errors.append("settings.max_retries must be an integer between 0 and 10")
+
+    return errors
 
 
 def load_config(config_path: str = None) -> dict:
@@ -37,19 +87,34 @@ def load_config(config_path: str = None) -> dict:
             "arxiv_ai": {
                 "enabled": True,
                 "config": {
-                    "categories": ["cs.AI", "cs.LG", "cs.CL"],
-                    "max_results": 15,
-                    "days_back": 3
+                    "categories": ["cs.AI", "cs.LG", "cs.CL", "cs.SE", "cs.SY"],
+                    "max_results": 20,
+                    "days_back": 3,
+                    "fetch_code_links": True
                 }
             },
             "github_trending": {
                 "enabled": True,
                 "config": {
-                    "languages": ["", "python", "javascript", "rust"],
-                    "since": "daily"
+                    "languages": ["python", "rust", "typescript", "go", ""],
+                    "since": "daily",
+                    "min_stars": 50
                 }
             },
-            "rss_feeds": DEFAULT_FEEDS
+            "rss_feeds": DEFAULT_FEEDS,
+            "tech_blogs": {
+                "enabled": True,
+                "config": {
+                    "blogs": [
+                        "distill",
+                        "lil_log",
+                        "sebastian_raschka",
+                        "huggingface",
+                        "openai",
+                        "anthropic"
+                    ]
+                }
+            }
         },
         "settings": {
             "request_delay": 1.0,
@@ -58,6 +123,11 @@ def load_config(config_path: str = None) -> dict:
         },
         "deduplication": {
             "simhash_threshold": 3
+        },
+        "output": {
+            "generate_tech_summary": True,
+            "include_code_snippets": True,
+            "highlight_complexity": True
         }
     }
 
@@ -78,13 +148,82 @@ def load_config(config_path: str = None) -> dict:
             default_config["sources"].update(user_config.get("sources", {}))
             default_config["settings"].update(user_config.get("settings", {}))
             default_config["deduplication"].update(user_config.get("deduplication", {}))
+            default_config["output"].update(user_config.get("output", {}))
             print(f"[Config] Loaded: {config_path}")
         except Exception as e:
             print(f"[Config] Warning: Failed to load config: {e}, using defaults")
     else:
         print("[Config] Using default configuration")
 
+    # Validate configuration
+    errors = validate_config(default_config)
+    if errors:
+        print("[Config] Validation errors:")
+        for error in errors:
+            print(f"  - {error}")
+        print("[Config] Using default values for invalid settings")
+
     return default_config
+
+
+def classify_for_developers(article: dict) -> str:
+    """
+    技术导向的分类 - 专为程序员设计
+
+    分类规则：
+    - llm: 大语言模型相关
+    - paper: 学术研究论文
+    - code: 开源代码/项目
+    - tool: 开发工具/SDK
+    - infra: 基础设施/部署
+    - tutorial: 技术教程
+    """
+    title = article.get("title", "").lower()
+    summary = article.get("summary", "").lower()
+    source = article.get("source", "").lower()
+    tags = [t.lower() for t in article.get("tags", [])]
+
+    text = f"{title} {summary} {' '.join(tags)}"
+
+    # LLM/模型相关
+    llm_keywords = ["gpt", "claude", "llama", "gemini", "mistral", "transformer",
+                    "language model", "fine-tuning", "prompt", "rag", "agent"]
+    if any(k in text for k in llm_keywords):
+        return "llm"
+
+    # 基础设施/部署
+    infra_keywords = ["deployment", "inference", "optimization", "quantization",
+                      "tensorrt", "onnx", "vllm", "cuda", "gpu", "serving",
+                      "distributed", "training", "kubernetes", "docker"]
+    if any(k in text for k in infra_keywords):
+        return "infra"
+
+    # 开发工具
+    tool_keywords = ["sdk", "api", "framework", "library", "toolkit", "cli",
+                     "vscode", "plugin", "extension", "debugger", "profiler"]
+    if any(k in text for k in tool_keywords):
+        return "tool"
+
+    # 教程
+    tutorial_keywords = ["tutorial", "guide", "how to", "getting started",
+                         "best practice", "example", "walkthrough", " explained"]
+    if any(k in text for k in tutorial_keywords):
+        return "tutorial"
+
+    # 根据来源判断
+    if "github" in source:
+        return "code"
+    if "arxiv" in source:
+        return "paper"
+
+    # 默认根据 category
+    category_map = {
+        "paper": "paper",
+        "code": "code",
+        "blog": "tutorial",
+        "news": "llm"
+    }
+    return category_map.get(article.get("category"), "llm")
 
 
 def run_crawler(config_path: str = None, output_dir: str = None) -> str:
@@ -101,13 +240,14 @@ def run_crawler(config_path: str = None, output_dir: str = None) -> str:
     config = load_config(config_path)
 
     if output_dir is None:
-        output_dir = "/mnt/user-data/outputs/ai-news"
+        output_dir = "./output"
 
     settings = config.get("settings", {})
     sources = config.get("sources", {})
+    output_config = config.get("output", {})
 
     print("=" * 50)
-    print("AI News Crawler")
+    print("AI News Crawler - Developer Edition")
     print("=" * 50)
 
     all_articles = []
@@ -125,12 +265,16 @@ def run_crawler(config_path: str = None, output_dir: str = None) -> str:
     if arxiv_config.get("enabled", True):
         print("\n[Phase 2] Crawling ArXiv papers...")
         try:
-            arxiv_crawler = ArXivCrawler()
+            arxiv_crawler = ArXivCrawler(
+                max_retries=settings.get("max_retries", 3),
+                request_delay=settings.get("request_delay", 1.0)
+            )
             arxiv_cfg = arxiv_config.get("config", {})
             arxiv_articles = arxiv_crawler.crawl(
-                categories=arxiv_cfg.get("categories", ["cs.AI", "cs.LG", "cs.CL"]),
-                max_results=arxiv_cfg.get("max_results", 15),
-                days_back=arxiv_cfg.get("days_back", 3)
+                categories=arxiv_cfg.get("categories", ["cs.AI", "cs.LG", "cs.CL", "cs.SE"]),
+                max_results=arxiv_cfg.get("max_results", 20),
+                days_back=arxiv_cfg.get("days_back", 3),
+                fetch_code_links=arxiv_cfg.get("fetch_code_links", True)
             )
             all_articles.extend(arxiv_articles)
         except Exception as e:
@@ -141,11 +285,15 @@ def run_crawler(config_path: str = None, output_dir: str = None) -> str:
     if github_config.get("enabled", True):
         print("\n[Phase 3] Crawling GitHub Trending...")
         try:
-            github_crawler = GitHubCrawler()
+            github_crawler = GitHubCrawler(
+                max_retries=settings.get("max_retries", 3),
+                request_delay=settings.get("request_delay", 1.0)
+            )
             gh_cfg = github_config.get("config", {})
             github_repos = github_crawler.crawl(
-                languages=gh_cfg.get("languages", ["", "python", "javascript", "rust"]),
-                since=gh_cfg.get("since", "daily")
+                languages=gh_cfg.get("languages", ["python", "rust", "typescript", "go", ""]),
+                since=gh_cfg.get("since", "daily"),
+                min_stars=gh_cfg.get("min_stars", 50)
             )
             all_articles.extend(github_repos)
         except Exception as e:
@@ -153,34 +301,70 @@ def run_crawler(config_path: str = None, output_dir: str = None) -> str:
 
     print(f"\n[Summary] Total articles fetched: {len(all_articles)}")
 
-    # 4. Deduplication
-    print("\n[Phase 4] Deduplicating...")
+    # 4. Developer-focused classification
+    print("\n[Phase 4] Classifying for developers...")
+    for article in all_articles:
+        article["dev_category"] = classify_for_developers(article)
+
+    # 5. Deduplication
+    print("\n[Phase 5] Deduplicating...")
     dedup_config = config.get("deduplication", {})
     deduplicator = Deduplicator(
         simhash_threshold=dedup_config.get("simhash_threshold", 3)
     )
     unique_articles = deduplicator.deduplicate(all_articles)
 
-    # 5. Generate report
-    print("\n[Phase 5] Generating report...")
-    generator = ReportGenerator()
-    html = generator.generate(unique_articles)
+    # 6. Generate tech summaries
+    overall_summary = None
+    category_summaries = {}
+    key_takeaways = []
+    if output_config.get("generate_tech_summary", True):
+        print("\n[Phase 6] Generating tech summaries...")
+        summarizer = TechSummarizer()
+        overall_summary, category_summaries, unique_articles, key_takeaways = summarizer.summarize(unique_articles)
 
-    # 6. Save file
+    # 7. Generate report
+    print("\n[Phase 7] Generating report...")
+    generator = ReportGenerator()
+    html = generator.generate(
+        unique_articles,
+        report_date=datetime.now(),
+        overall_summary=overall_summary,
+        category_summaries=category_summaries,
+        key_takeaways=key_takeaways,
+        include_code_snippets=output_config.get("include_code_snippets", True)
+    )
+
+    # 8. Save file
     timestamp = datetime.now().strftime("%Y%m%d")
     output_path = os.path.join(output_dir, f"ai-news-{timestamp}.html")
     generator.save(html, output_path)
 
+    # Print category stats
+    from collections import Counter
+    cat_counts = Counter([a.get("dev_category", "other") for a in unique_articles])
+
     print("\n" + "=" * 50)
     print(f"Done! {len(unique_articles)} unique articles")
-    print(f"Report: {output_path}")
+    print("\nCategory breakdown:")
+    cat_names = {
+        "llm": "🤖 LLM/模型",
+        "paper": "📄 前沿论文",
+        "code": "💻 开源代码",
+        "tool": "🛠️ 开发工具",
+        "infra": "⚙️ 基础设施",
+        "tutorial": "📚 技术教程"
+    }
+    for cat, count in sorted(cat_counts.items(), key=lambda x: -x[1]):
+        print(f"  {cat_names.get(cat, cat)}: {count}")
+    print(f"\nReport: {output_path}")
     print("=" * 50)
 
     return output_path
 
 
 def main():
-    parser = argparse.ArgumentParser(description="AI News Crawler")
+    parser = argparse.ArgumentParser(description="AI News Crawler - Developer Edition")
     parser.add_argument(
         "--config",
         default=None,
@@ -188,8 +372,8 @@ def main():
     )
     parser.add_argument(
         "--output-dir",
-        default="/mnt/user-data/outputs/ai-news",
-        help="Output directory (default: /mnt/user-data/outputs/ai-news)"
+        default="./output",
+        help="Output directory (default: ./output)"
     )
 
     args = parser.parse_args()
