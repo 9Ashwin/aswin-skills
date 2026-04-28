@@ -25,6 +25,8 @@ npx skills add https://github.com/ashwinyue/aswin-skills.git --skill git-review 
 | Skill | Description |
 |-------|-------------|
 | [git-review](skills/git-review/) | Local code review tool for pre-push self-check |
+| [sdd-workflow](skills/sdd-workflow/) | Spec-driven development router — classifies requests and routes between OpenSpec and Superpowers |
+| [sdd-review-specs](skills/sdd-review-specs/) | Structured review gate for OpenSpec artifacts before implementation |
 
 ---
 
@@ -49,6 +51,8 @@ npx skills add https://github.com/ashwinyue/aswin-skills.git --skill git-review 
 | Skill | 描述 |
 |-------|------|
 | [git-review](skills/git-review/) | 本地代码审查工具，用于 push 前自检 |
+| [sdd-workflow](skills/sdd-workflow/) | 规约驱动开发路由器 — 分类开发请求，在 OpenSpec 和 Superpowers 间分发 |
+| [sdd-review-specs](skills/sdd-review-specs/) | OpenSpec 四大件结构化审核门，实现前把关 |
 
 ### 审查范围
 
