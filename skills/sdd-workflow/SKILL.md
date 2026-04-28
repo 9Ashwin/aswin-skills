@@ -15,6 +15,23 @@ IF A SPEC EXISTS, YOU MUST READ IT BEFORE WRITING CODE. IF NO SPEC EXISTS FOR BE
 This is not negotiable. This is not optional. You cannot rationalize your way out of this.
 </EXTREMELY-IMPORTANT>
 
+## The Default Chain
+
+This skill IS the SDD pipeline. When invoked for a new feature, it routes through the standard sequence — you do NOT need to list individual steps in CLAUDE.md:
+
+```
+sdd-workflow invoked
+  → classify: new feature
+  → /opsx:propose (generate 4 artifacts)
+  → sdd-review-specs (review gate)
+  → superpowers:writing-plans (granularity refinement)
+  → /opsx:apply + superpowers:test-driven-development (pipeline)
+  → superpowers:verification-before-completion (evidence gate)
+  → /opsx:archive (delta merge)
+```
+
+Reference `sdd-workflow` — it knows the rest. The full decision tree and transition rules are below.
+
 ## Instruction Priority
 
 1. **User's explicit instructions** (CLAUDE.md, AGENTS.md, direct requests) — highest priority
